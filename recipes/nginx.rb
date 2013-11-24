@@ -30,7 +30,7 @@ end
 # Create the healthcheck static HTML file to satisfy ELB (workaround for htpasswd protection)
 cookbook_file "#{node[:kibana][:nginx][:healthcheck_dir]}/check.html" do
   source "check.html"
-  mode "0755"
+  mode "0644"
 end
 
 include_recipe "nginx"
