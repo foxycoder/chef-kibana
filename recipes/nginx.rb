@@ -20,6 +20,10 @@ require 'base64'
 
 node.set['nginx']['default_site_enabled'] = node['kibana']['nginx']['enable_default_site']
 
+cookbook_file "/srv/www/check.html" do
+  source "check.html"
+end
+
 include_recipe "nginx"
 
 es_instances = node[:opsworks][:layers][:elasticsearch][:instances]
