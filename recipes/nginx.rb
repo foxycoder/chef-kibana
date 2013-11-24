@@ -20,6 +20,19 @@ require 'base64'
 
 node.set['nginx']['default_site_enabled'] = node['kibana']['nginx']['enable_default_site']
 
+# Create a directory for the healtcheck static HTML file
+directory node[:kibana][:nginx][:healthcheck_dir] do
+  action :create
+  recursive true
+  mode "0755"
+end
+
+# Create the healthcheck static HTML file to satisfy ELB (workaround for htpasswd protection)
+cookbook_file "#{node[:kibana][:nginx][:healthcheck_dir]}/check.html" do
+  source "check.html"
+  mode "0644"
+end
+
 include_recipe "nginx"
 
 es_instances = node[:opsworks][:layers][:elasticsearch][:instances]
