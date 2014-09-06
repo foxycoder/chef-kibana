@@ -24,6 +24,17 @@ server {
     proxy_set_header Authorization "Basic <%= Base64.encode64("#{node[:kibana][:es_user]}:#{node[:kibana][:es_password]}").chomp %>";
     <% end %>
   }
+  location ~ ^/.*/_aliases$ {
+    <% if node['kibana']['web_user'] %>
+    auth_basic "Restricted";
+    auth_basic_user_file /etc/nginx/htpasswd;
+    <% end %>
+    proxy_pass http://<%= @es_server %>:<%= @es_port %>;
+    proxy_read_timeout 90;
+    <% if node[:kibana][:es_user] %>
+    proxy_set_header Authorization "Basic <%= Base64.encode64("#{node[:kibana][:es_user]}:#{node[:kibana][:es_password]}").chomp %>";
+    <% end %>
+  }
   location ~ ^/_nodes$ {
     <% if node['kibana']['web_user'] %>
     auth_basic "Restricted";
