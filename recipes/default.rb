@@ -17,10 +17,12 @@
 # limitations under the License.
 #
 
-include_recipe "git"
+#include_recipe "git"
 
 es_instances = node[:opsworks][:layers][node['kibana']['es_role']][:instances]
 es_hosts = es_instances.map{ |name, attrs| attrs['private_ip'] }
+kibana_url = node['kibana']['kibana_url'] || "https://download.elasticsearch.org/kibana/kibana/kibana-#{node['kibana']['version']}.tar.gz"
+src_filepath = "#{node['kibana']['installdir']}/kibana-#{node['kibana']['version']}.tar.gz"
 
 unless es_hosts.empty?
   node.set['kibana']['es_server'] = es_hosts.first
@@ -41,20 +43,33 @@ directory node['kibana']['installdir'] do
   owner kibana_user
   mode "0755"
 end
+remote_file kibana_url do
+  source    kibana_url
+  path      src_filepath
+end
+package 'tar'
 
-git "#{node['kibana']['installdir']}/#{node['kibana']['branch']}" do
-  repository node['kibana']['repo']
-  reference node['kibana']['branch']
-  if node['kibana']['git']['checkout']
-    action :checkout
-  else
-    action :sync
-  end
-  user kibana_user
+bash 'unarchive_source' do
+  cwd  ::File.dirname(src_filepath)
+  code <<-EOH
+    tar zxf #{::File.basename(src_filepath)} -C #{::File.dirname(src_filepath)}
+    chown #{kibana_user} -R .
+  EOH
 end
 
+#git "#{node['kibana']['installdir']}/#{node['kibana']['branch']}" do
+  #repository node['kibana']['repo']
+  #reference node['kibana']['branch']
+  #if node['kibana']['git']['checkout']
+    #action :checkout
+  #else
+    #action :sync
+  #end
+  #user kibana_user
+#end
+
 link "#{node['kibana']['installdir']}/current" do
-  to "#{node['kibana']['installdir']}/#{node['kibana']['branch']}/src"
+  to "#{node['kibana']['installdir']}/kibana-#{node['kibana']['version']}"
 end
 
 template "#{node['kibana']['installdir']}/current/config.js" do
